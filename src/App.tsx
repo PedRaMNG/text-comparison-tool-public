@@ -933,15 +933,15 @@ function App() {
                     }`}
                     placeholder="Paste original text here..."
                   />
+                  
                   <div
                     className={`w-44 p-4 rounded-lg border ${
                       isDarkMode
                         ? 'border-gray-600 bg-gray-800 text-white'
                         : 'border-gray-300 bg-white'
-                    } ml-2 overflow-y-auto`}
+                    } ml-2 overflow-y-auto max-h-64`}
                   >
-                    <h4 className="font-semibold mb-2">Repetitions</h4>
-                    <ul>
+                      <ul>
                       {Object.entries(repeatedWordsText1)
                         .sort(([, countA], [, countB]) => countB - countA)
                         .map(([word, count]) => (
@@ -978,9 +978,8 @@ function App() {
                       isDarkMode
                         ? 'border-gray-600 bg-gray-800 text-white'
                         : 'border-gray-300 bg-white'
-                    } ml-2 overflow-y-auto`}
+                    } ml-2 overflow-y-auto max-h-64`}
                   >
-                    <h4 className="font-semibold mb-2">Repetitions</h4>
                     <ul>
                       {Object.entries(repeatedWordsText2)
                         .sort(([, countA], [, countB]) => countB - countA)
@@ -1152,15 +1151,14 @@ function App() {
                   className="flex flex-col md:flex-row relative"
                 >
                   {!isSimpleMode && (
-                    <div className="flex flex-row md:flex-row">
+                    <div className="flex flex-row md:flex-row" style={{width: '100%'}}> {/* Added width: 100% to ensure full width for flex children */}
                       <div
                         className={`w-44 p-4 rounded-lg border ${
                           isDarkMode
                             ? 'border-gray-600 bg-gray-800 text-white'
                             : 'border-gray-300 bg-white'
-                        } mr-4 overflow-y-auto order-1 md:order-none relative`}
+                        } mr-4 overflow-y-auto order-1 md:order-none relative max-h-64`}
                       >
-                        <h4 className="font-semibold mb-2">Repetitions</h4>
                         <ul>
                           {Object.entries(repeatedWordsFinalText)
                             .sort(([, countA], [, countB]) => countB - countA)
@@ -1194,7 +1192,7 @@ function App() {
                         </button>
                       </div>
                       <div
-                        className={`p-4 rounded border relative text-lg leading-relaxed outline-none min-h-[200px] whitespace-pre-wrap mb-4 md:mb-0 order-2 md:order-none ${
+                        className={`p-4 rounded border relative text-lg leading-relaxed outline-none min-h-[200px] whitespace-pre-wrap mb-4 md:mb-0 order-2 md:order-none overflow-y-auto max-h-64 ${ // Added overflow-y-auto and max-h-64
                           isDarkMode
                             ? 'dark-scrollbar border-gray-700'
                             : 'border-gray-300'
