@@ -17,6 +17,9 @@ import {
   Settings,
   RefreshCw,
   Github,
+  Info,
+  Pencil,
+  Trash2,
 } from 'lucide-react';
 import { diffWords } from 'diff';
 import { supabase } from './supabase';
@@ -62,6 +65,9 @@ function App() {
   const [isIntuitiveModeActive, setIsIntuitiveModeActive] = useState(true);
   const [isSigningIn, setIsSigningIn] = useState(false);
   const [isUserLoaded, setIsUserLoaded] = useState(false);
+  const [hoveredComparisonId, setHoveredComparisonId] = useState<string | null>(null);
+  const [editingComparisonId, setEditingComparisonId] = useState<string | null>(null);
+  const [editingComparisonTitle, setEditingComparisonTitle] = useState('');
 
   const [repeatedWordsText1, setRepeatedWordsText1] = useState<{
     [word: string]: number;
@@ -154,6 +160,47 @@ function App() {
     setText2(comparison.modified_text);
     setShowHistory(false);
     handleCompare();
+  };
+
+  const handleDeleteComparison = async (e: React.MouseEvent, comparisonId: string) => {
+    e.stopPropagation();
+    if (confirm('Are you sure you want to delete this comparison?')) {
+      const { error } = await supabase
+        .from('comparisons')
+        .delete()
+        .eq('id', comparisonId);
+
+      if (error) {
+        console.error('Error deleting comparison:', error);
+        alert('Failed to delete comparison');
+      } else {
+        loadComparisons();
+      }
+    }
+  };
+
+  const handleStartRenameComparison = (e: React.MouseEvent, comparison: Comparison) => {
+    e.stopPropagation();
+    setEditingComparisonId(comparison.id);
+    setEditingComparisonTitle(comparison.title);
+  };
+
+  const handleRenameComparison = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingComparisonId) return;
+
+    const { error } = await supabase
+      .from('comparisons')
+      .update({ title: editingComparisonTitle })
+      .eq('id', editingComparisonId);
+
+    if (error) {
+      console.error('Error renaming comparison:', error);
+      alert('Failed to rename comparison');
+    } else {
+      setEditingComparisonId(null);
+      loadComparisons();
+    }
   };
 
   const handleLogin = async () => {
@@ -338,6 +385,8 @@ function App() {
 
         finalTextRef.current.appendChild(span);
       });
+
+      finalTextRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
     updateRepeatedWordsFinalText();
   };
@@ -686,24 +735,34 @@ function App() {
                 />
                 <button
                   onClick={handleLogout}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-300 ${
-                    isDarkMode ? 'glass-button-red' : 'glass-button-red'
-                  } text-white`}
+                  className={`p-2 rounded-lg transition-colors ${
+                    isDarkMode
+                      ? 'bg-gray-700 hover:bg-gray-600'
+                      : 'bg-gray-200 hover:bg-gray-300'
+                  }`}
+                  title="Sign Out"
                 >
-                  <LogOut size={18} />
-                  Sign Out
+                  <LogOut
+                    size={18}
+                    className={isDarkMode ? 'text-white' : 'text-gray-700'}
+                  />
                 </button>
               </div>
             ) : (
               <button
                 onClick={handleLogin}
                 disabled={isSigningIn}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-300 ${
-                  isDarkMode ? 'glass-button-blue' : 'glass-button-blue'
-                } text-white`}
+                className={`p-2 rounded-lg transition-colors ${
+                  isDarkMode
+                    ? 'bg-gray-700 hover:bg-gray-600'
+                    : 'bg-gray-200 hover:bg-gray-300'
+                }`}
+                title={isSigningIn ? 'Signing in...' : 'Sign In'}
               >
-                <LogIn size={18} />
-                {isSigningIn ? 'Signing in...' : 'Sign In'}
+                <LogIn
+                  size={18}
+                  className={isDarkMode ? 'text-white' : 'text-gray-700'}
+                />
               </button>
             )}
 
@@ -822,28 +881,7 @@ function App() {
           </div>
         )}
 
-        {user && (
-          <div className="flex gap-4 mb-8">
-            <button
-              onClick={handleSave}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-300 ${
-                isDarkMode ? 'glass-button-green' : 'glass-button-green'
-              } text-white`}
-            >
-              <Save size={18} />
-              Save Comparison
-            </button>
-            <button
-              onClick={() => setShowHistory((prev) => !prev)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-300 ${
-                isDarkMode ? 'glass-button-blue' : 'glass-button-blue'
-              } text-white`}
-            >
-              <History size={18} />
-              {showHistory ? 'Hide History' : 'Show History'}
-            </button>
-          </div>
-        )}
+
 
         {showSaveDialog && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -890,22 +928,98 @@ function App() {
               isDarkMode ? 'bg-gray-800' : 'bg-white'
             }`}
           >
-            <h2 className="text-xl font-bold mb-4">Comparison History</h2>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">Comparison History</h2>
+              <button
+                onClick={() => setShowHistory(false)}
+                className={`flex items-center gap-1 px-3 py-2 rounded-lg transition-all duration-300 ${
+                  isDarkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'
+                } transform hover:scale-105 focus:outline-none`}
+                title="Back to Comparison"
+              >
+                <ChevronLeft size={16} />
+                <span>Back</span>
+              </button>
+            </div>
             <div className="space-y-4">
               {comparisons.map((comparison) => (
                 <div
                   key={comparison.id}
-                  className={`p-4 rounded-lg cursor-pointer transition-colors ${
+                  className={`p-4 rounded-lg cursor-pointer transition-colors relative ${
                     isDarkMode
                       ? 'bg-gray-700 hover:bg-gray-600'
                       : 'bg-gray-100 hover:bg-gray-200'
                   }`}
                   onClick={() => handleLoadComparison(comparison)}
+                  onMouseEnter={() => setHoveredComparisonId(comparison.id)}
+                  onMouseLeave={() => setHoveredComparisonId(null)}
                 >
-                  <h3 className="font-semibold">{comparison.title}</h3>
+                  {editingComparisonId === comparison.id ? (
+                    <form onSubmit={handleRenameComparison} className="mb-2">
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          value={editingComparisonTitle}
+                          onChange={(e) => setEditingComparisonTitle(e.target.value)}
+                          className={`w-full p-1 rounded ${isDarkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'}`}
+                          autoFocus
+                          onClick={(e) => e.stopPropagation()}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Escape') {
+                              e.preventDefault();
+                              setEditingComparisonId(null);
+                            }
+                          }}
+                        />
+                        <button 
+                          type="submit" 
+                          className={`p-1.5 rounded-full transition-colors ${isDarkMode ? 'bg-gray-600 hover:bg-green-500' : 'bg-gray-200 hover:bg-green-100'}`}
+                          onClick={(e) => e.stopPropagation()}
+                          title="Confirm"
+                        >
+                          <Check size={18} className={isDarkMode ? 'text-white hover:text-green-100' : 'text-gray-700 hover:text-green-500'} />
+                        </button>
+                        <button 
+                          type="button" 
+                          className={`p-1.5 rounded-full transition-colors ${isDarkMode ? 'bg-gray-600 hover:bg-red-500' : 'bg-gray-200 hover:bg-red-100'}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEditingComparisonId(null);
+                          }}
+                          title="Cancel"
+                        >
+                          <X size={18} className={isDarkMode ? 'text-white hover:text-red-100' : 'text-gray-700 hover:text-red-500'} />
+                        </button>
+                      </div>
+                    </form>
+                  ) : (
+                    <h3 className="font-semibold">{comparison.title}</h3>
+                  )}
                   <p className="text-sm text-gray-500">
                     {new Date(comparison.created_at).toLocaleDateString()}
                   </p>
+                  
+                  {hoveredComparisonId === comparison.id && editingComparisonId !== comparison.id && (
+                    <div 
+                      className="absolute top-2 right-2 flex space-x-2"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <button
+                        className={`p-1.5 rounded-full transition-colors ${isDarkMode ? 'bg-gray-600 hover:bg-gray-500' : 'bg-gray-200 hover:bg-gray-300'}`}
+                        onClick={(e) => handleStartRenameComparison(e, comparison)}
+                        title="Rename"
+                      >
+                        <Pencil size={20} className={isDarkMode ? 'text-white' : 'text-gray-700'} />
+                      </button>
+                      <button
+                        className={`p-1.5 rounded-full transition-colors ${isDarkMode ? 'bg-gray-600 hover:bg-red-500' : 'bg-gray-200 hover:bg-red-100'}`}
+                        onClick={(e) => handleDeleteComparison(e, comparison.id)}
+                        title="Delete"
+                      >
+                        <Trash2 size={20} className={isDarkMode ? 'text-white hover:text-red-100' : 'text-gray-700 hover:text-red-500'} />
+                      </button>
+                    </div>
+                  )}
                 </div>
               ))}
               {comparisons.length === 0 && (
@@ -1000,7 +1114,7 @@ function App() {
             </div>
 
             {!isSimpleMode && (
-              <div className="flex justify-center mb-8">
+              <div className="flex justify-center gap-4 mb-8">
                 <button
                   onClick={handleCompare}
                   className={`px-6 py-3 text-white rounded-lg font-medium transition-all duration-300 ${
@@ -1008,6 +1122,26 @@ function App() {
                   } transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50`}
                 >
                   Compare Texts
+                </button>
+                <button
+                  onClick={user ? handleSave : handleLogin}
+                  className={`p-3 rounded-lg transition-all duration-300 ${user ? 
+                    (isDarkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300') : 
+                    (isDarkMode ? 'bg-gray-700 opacity-60 hover:opacity-100' : 'bg-gray-200 opacity-60 hover:opacity-100')
+                  } transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50`}
+                  title={user ? "Save Comparison" : "Sign in"}
+                >
+                  <Save size={18} className={user ? (isDarkMode ? "text-white" : "text-gray-800") : "text-white"} />
+                </button>
+                <button
+                  onClick={user ? () => setShowHistory((prev) => !prev) : handleLogin}
+                  className={`p-3 rounded-lg transition-all duration-300 ${user ? 
+                    (isDarkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300') : 
+                    (isDarkMode ? 'bg-gray-700 opacity-60 hover:opacity-100' : 'bg-gray-200 opacity-60 hover:opacity-100')
+                  } transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50`}
+                  title={user ? (showHistory ? 'Hide History' : 'Show History') : "Sign in"}
+                >
+                  <History size={18} className={user ? (isDarkMode ? "text-white" : "text-gray-800") : "text-white"} />
                 </button>
               </div>
             )}
@@ -1073,52 +1207,29 @@ function App() {
                         <ChevronRight size={16} />
                       </button>
 
-                      <div className="relative inline-flex items-center">
-                        <span
-                          className={`mr-2 text-sm ${
-                            !isIntuitiveModeActive ? 'font-bold' : ''
+                      <div className="relative group">
+                        <button
+                          className={`p-2 rounded-lg transition-colors ${
+                            isDarkMode
+                              ? 'bg-gray-700 hover:bg-gray-600'
+                              : 'bg-gray-200 hover:bg-gray-300'
                           }`}
+                          title="Information"
                         >
-                          Literal
-                        </span>
-                        <div
-                          onClick={toggleActionMode}
-                          className={`w-16 h-8 flex items-center rounded-full p-1 cursor-pointer transition-colors ${
-                            isDarkMode ? 'bg-gray-700' : 'bg-gray-300'
-                          }`}
-                        >
-                          <div
-                            className={`bg-blue-600 w-6 h-6 rounded-full shadow-md transform transition-transform ${
-                              isIntuitiveModeActive
-                                ? 'translate-x-8'
-                                : 'translate-x-0'
-                            }`}
-                          />
+                          <Info size={18} className={isDarkMode ? 'text-white' : 'text-gray-700'} />
+                        </button>
+                        <div className={`absolute right-0 w-64 p-3 rounded-lg shadow-lg z-10 transform scale-0 group-hover:scale-100 transition-transform origin-top-right ${
+                          isDarkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'
+                        }`}>
+                          <p className="text-sm mb-2"><span className="inline-flex items-center"><Check size={14} className="mr-1 text-green-500" /> approves changes</span> (add additions, remove deletions)</p>
+                          <p className="text-sm"><span className="inline-flex items-center"><X size={14} className="mr-1 text-red-500" /> discards changes</span></p>
                         </div>
-                        <span
-                          className={`ml-2 text-sm ${
-                            isIntuitiveModeActive ? 'font-bold' : ''
-                          }`}
-                        >
-                          Intuitive
-                        </span>
                       </div>
                     </div>
                   )}
                 </div>
 
-                {!isSimpleMode && (
-                  <div
-                    className={`text-sm mb-3 p-2 rounded-md ${
-                      isDarkMode ? 'bg-gray-700/50' : 'bg-gray-100'
-                    }`}
-                  >
-                    <strong>Mode:</strong>{' '}
-                    {isIntuitiveModeActive
-                      ? 'Intuitive - ✓ approves changes (add additions, remove deletions), ✗ discards changes'
-                      : 'Literal - ✓ keeps text regardless of type, ✗ removes text regardless of type'}
-                  </div>
-                )}
+
               </div>
 
               {isSimpleMode ? (
