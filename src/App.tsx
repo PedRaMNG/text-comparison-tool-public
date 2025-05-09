@@ -1,26 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import {
-  Sun,
-  Moon,
-  Check,
-  X,
-  Undo2,
-  GripHorizontal,
-  Copy,
-  CheckCircle,
-  ChevronRight,
-  ChevronLeft,
-  Save,
-  History,
-  LogIn,
-  LogOut,
-  Settings,
-  RefreshCw,
-  Github,
-  Info,
-  Pencil,
-  Trash2,
-} from 'lucide-react';
+import { Sun, Moon, Check, X, Undo2, 
+  GripHorizontal, Copy, CheckCircle, 
+  ChevronRight, ChevronLeft, Save, History, 
+  LogIn, LogOut, Settings, RefreshCw, 
+  Github, Info, Pencil, Trash2 } from 'lucide-react';
 import { diffWords } from 'diff';
 import { supabase } from './supabase';
 
@@ -54,7 +37,7 @@ function App() {
   const [differences, setDifferences] = useState<DiffPart[]>([]);
   const [finalText, setFinalText] = useState('');
   const [decisions, setDecisions] = useState<Decision[]>([]);
-  const [splitRatio, setSplitRatio] = useState(67);
+
   const [isFinalTextFocused, setIsFinalTextFocused] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
   const [user, setUser] = useState<any>(null);
@@ -81,12 +64,11 @@ function App() {
   const [charThreshold, setCharThreshold] = useState(4);
   const [repetitionThreshold, setRepetitionThreshold] = useState(2);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [showRepeatedWords, setShowRepeatedWords] = useState(false);
 
   const finalTextRef = useRef<HTMLDivElement>(null);
-  const resizingRef = useRef(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const initialXRef = useRef(0);
-  const initialWidthRef = useRef(0);
+  
+
 
   useEffect(() => {
     const {
@@ -342,6 +324,14 @@ function App() {
     if (isSimpleMode && text1 && text2) {
       const diff = diffWords(text1, text2);
       setDifferences(diff);
+      setFinalText(text2);
+      
+      // Make sure finalTextRef has the content for proper word count
+      if (finalTextRef.current) {
+        finalTextRef.current.textContent = text2;
+      }
+      // Update repeated words count when text changes in simple mode
+      updateRepeatedWordsFinalText();
     }
   }, [text1, text2, isSimpleMode]);
 
@@ -603,35 +593,7 @@ function App() {
     }
   };
 
-  const handleResizeStart = (e: React.MouseEvent) => {
-    e.preventDefault();
-    resizingRef.current = true;
-    initialXRef.current = e.clientX;
-    initialWidthRef.current = splitRatio;
-
-    document.addEventListener('mousemove', handleResizeMove);
-    document.addEventListener('mouseup', handleResizeEnd);
-  };
-
-  const handleResizeMove = (e: MouseEvent) => {
-    if (!resizingRef.current || !containerRef.current) return;
-
-    const containerWidth = containerRef.current.clientWidth;
-    const deltaX = e.clientX - initialXRef.current;
-    const deltaPercent = (deltaX / containerWidth) * 100;
-
-    const newRatio = Math.min(
-      Math.max(initialWidthRef.current + deltaPercent, 30),
-      90
-    );
-    setSplitRatio(newRatio);
-  };
-
-  const handleResizeEnd = () => {
-    resizingRef.current = false;
-    document.removeEventListener('mousemove', handleResizeMove);
-    document.removeEventListener('mouseup', handleResizeEnd);
-  };
+  // Removed resize handlers as we're removing the dynamic split view
 
   const handleCopy = () => {
     if (finalTextRef.current) {
@@ -645,6 +607,14 @@ function App() {
         }
       );
     }
+  };
+
+  // Function to count words and characters in a text
+  const countWordsAndChars = (text: string): { words: number; chars: number } => {
+    const trimmedText = text.trim();
+    const words = trimmedText ? trimmedText.split(/\s+/).length : 0;
+    const chars = text.length;
+    return { words, chars };
   };
 
   const countRepeatedWords = (
@@ -682,13 +652,23 @@ function App() {
   }, [text2, charThreshold, repetitionThreshold]);
 
   const updateRepeatedWordsFinalText = () => {
-    setRepeatedWordsFinalText(
-      countRepeatedWords(
-        finalTextRef.current?.textContent || '',
-        charThreshold,
-        repetitionThreshold
-      )
-    );
+    if (isSimpleMode) {
+      setRepeatedWordsFinalText(
+        countRepeatedWords(
+          text2,
+          charThreshold,
+          repetitionThreshold
+        )
+      );
+    } else {
+      setRepeatedWordsFinalText(
+        countRepeatedWords(
+          finalTextRef.current?.textContent || '',
+          charThreshold,
+          repetitionThreshold
+        )
+      );
+    }
   };
 
   const handleCharThresholdChange = (
@@ -765,31 +745,6 @@ function App() {
                 />
               </button>
             )}
-
-            <div className="relative inline-flex items-center">
-              <span
-                className={`mr-2 text-sm ${!isSimpleMode ? 'font-bold' : ''}`}
-              >
-                Advanced
-              </span>
-              <div
-                onClick={toggleMode}
-                className={`w-16 h-8 flex items-center rounded-full p-1 cursor-pointer transition-colors ${
-                  isDarkMode ? 'bg-gray-700' : 'bg-gray-300'
-                }`}
-              >
-                <div
-                  className={`bg-blue-600 w-6 h-6 rounded-full shadow-md transform transition-transform ${
-                    isSimpleMode ? 'translate-x-8' : 'translate-x-0'
-                  }`}
-                />
-              </div>
-              <span
-                className={`ml-2 text-sm ${isSimpleMode ? 'font-bold' : ''}`}
-              >
-                Simple
-              </span>
-            </div>
 
             <button
               onClick={openSettingsModal}
@@ -1036,7 +991,7 @@ function App() {
                 <label className="block text-lg font-medium">
                   Original Text
                 </label>
-                <div className="flex">
+                <div className="flex flex-col">
                   <textarea
                     value={text1}
                     onChange={(e) => setText1(e.target.value)}
@@ -1047,36 +1002,42 @@ function App() {
                     }`}
                     placeholder="Paste original text here..."
                   />
-                  
-                  <div
-                    className={`w-44 p-4 rounded-lg border ${
-                      isDarkMode
-                        ? 'border-gray-600 bg-gray-800 text-white'
-                        : 'border-gray-300 bg-white'
-                    } ml-2 overflow-y-auto max-h-64`}
-                  >
-                      <ul>
-                      {Object.entries(repeatedWordsText1)
-                        .sort(([, countA], [, countB]) => countB - countA)
-                        .map(([word, count]) => (
-                          <li key={word} className="mb-1">
-                            <span className="font-medium">{word}:</span> {count}{' '}
-                          </li>
-                        ))}
-                      {Object.keys(repeatedWordsText1).length === 0 && (
-                        <li className="text-gray-500 text-sm">
-                          No repeated words.
-                        </li>
-                      )}
-                    </ul>
+                  <div className={`mt-2 text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                    Words: {countWordsAndChars(text1).words} | Characters: {countWordsAndChars(text1).chars}
                   </div>
+                  
+                  {showRepeatedWords && (
+                    <div
+                      className={`w-96 p-4 rounded-lg border ${
+                        isDarkMode
+                          ? 'border-gray-600 bg-gray-800 text-white'
+                          : 'border-gray-300 bg-white'
+                      } ml-2 overflow-y-auto max-h-64`}
+                    >
+                      <div className="text-wrap">
+                        {Object.entries(repeatedWordsText1)
+                          .sort(([, countA], [, countB]) => countB - countA)
+                          .map(([word, count], index, array) => (
+                            <span key={word}>
+                              <span className="font-medium">{word}</span>: {count}
+                              {index < array.length - 1 ? ', ' : ''}
+                            </span>
+                          ))}
+                        {Object.keys(repeatedWordsText1).length === 0 && (
+                          <span className="text-gray-500 text-sm">
+                            No repeated words.
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
               <div className="space-y-2">
                 <label className="block text-lg font-medium">
                   Modified Text
                 </label>
-                <div className="flex">
+                <div className="flex flex-col">
                   <textarea
                     value={text2}
                     onChange={(e) => setText2(e.target.value)}
@@ -1087,34 +1048,39 @@ function App() {
                     }`}
                     placeholder="Paste modified text here..."
                   />
-                  <div
-                    className={`w-44 p-4 rounded-lg border ${
-                      isDarkMode
-                        ? 'border-gray-600 bg-gray-800 text-white'
-                        : 'border-gray-300 bg-white'
-                    } ml-2 overflow-y-auto max-h-64`}
-                  >
-                    <ul>
-                      {Object.entries(repeatedWordsText2)
-                        .sort(([, countA], [, countB]) => countB - countA)
-                        .map(([word, count]) => (
-                          <li key={word} className="mb-1">
-                            <span className="font-medium">{word}:</span> {count}{' '}
-                          </li>
-                        ))}
-                      {Object.keys(repeatedWordsText2).length === 0 && (
-                        <li className="text-gray-500 text-sm">
-                          No repeated words.
-                        </li>
-                      )}
-                    </ul>
+                  <div className={`mt-2 text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                    Words: {countWordsAndChars(text2).words} | Characters: {countWordsAndChars(text2).chars}
                   </div>
+                  {showRepeatedWords && (
+                    <div
+                      className={`w-96 p-4 rounded-lg border ${
+                        isDarkMode
+                          ? 'border-gray-600 bg-gray-800 text-white'
+                          : 'border-gray-300 bg-white'
+                      } ml-2 overflow-y-auto max-h-64`}
+                    >
+                      <div className="text-wrap">
+                        {Object.entries(repeatedWordsText2)
+                          .sort(([, countA], [, countB]) => countB - countA)
+                          .map(([word, count], index, array) => (
+                            <span key={word}>
+                              <span className="font-medium">{word}</span>: {count}
+                              {index < array.length - 1 ? ', ' : ''}
+                            </span>
+                          ))}
+                        {Object.keys(repeatedWordsText2).length === 0 && (
+                          <span className="text-gray-500 text-sm">
+                            No repeated words.
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
 
-            {!isSimpleMode && (
-              <div className="flex justify-center gap-4 mb-8">
+            <div className="flex justify-center gap-4 mb-8">
                 <button
                   onClick={handleCompare}
                   className={`px-6 py-3 text-white rounded-lg font-medium transition-all duration-300 ${
@@ -1122,6 +1088,15 @@ function App() {
                   } transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50`}
                 >
                   Compare Texts
+                </button>
+                <button
+                  onClick={() => setShowRepeatedWords(prev => !prev)}
+                  className={`px-6 py-3 rounded-lg font-medium transition-all duration-300 ${
+                    isDarkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'
+                  } transform hover:scale-105 focus:outline-none`}
+                  title={showRepeatedWords ? "Hide Repeated Words" : "Show Repeated Words"}
+                >
+                  {showRepeatedWords ? "Hide Repeated Words" : "Show Repeated Words"}
                 </button>
                 <button
                   onClick={user ? handleSave : handleLogin}
@@ -1143,8 +1118,31 @@ function App() {
                 >
                   <History size={18} className={user ? (isDarkMode ? "text-white" : "text-gray-800") : "text-white"} />
                 </button>
+                <div className="relative inline-flex items-center">
+                  <span
+                    className={`mr-2 text-sm ${!isSimpleMode ? 'font-bold' : ''}`}
+                  >
+                    Advanced
+                  </span>
+                  <div
+                    onClick={toggleMode}
+                    className={`w-16 h-8 flex items-center rounded-full p-1 cursor-pointer transition-colors ${
+                      isDarkMode ? 'bg-gray-700' : 'bg-gray-300'
+                    }`}
+                  >
+                    <div
+                      className={`bg-blue-600 w-6 h-6 rounded-full shadow-md transform transition-transform ${
+                        isSimpleMode ? 'translate-x-8' : 'translate-x-0'
+                      }`}
+                    />
+                  </div>
+                  <span
+                    className={`ml-2 text-sm ${isSimpleMode ? 'font-bold' : ''}`}
+                  >
+                    Simple
+                  </span>
+                </div>
               </div>
-            )}
 
             <div
               className={`rounded-lg shadow-lg p-6 transition-colors ${
@@ -1153,7 +1151,15 @@ function App() {
             >
               <div className="mb-4">
                 <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-xl font-semibold">Comparison Result</h2>
+                  <div className="flex flex-col">
+                    <h2 className="text-xl font-semibold">Comparison Result</h2>
+                    {isSimpleMode && (
+                      <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                        Words: {countWordsAndChars(text2).words} | 
+                        Characters: {countWordsAndChars(text2).chars}
+                      </div>
+                    )}
+                  </div>
 
                   {!isSimpleMode && (
                     <div className="flex items-center gap-2">
@@ -1221,89 +1227,141 @@ function App() {
                         <div className={`absolute right-0 w-64 p-3 rounded-lg shadow-lg z-10 transform scale-0 group-hover:scale-100 transition-transform origin-top-right ${
                           isDarkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'
                         }`}>
-                          <p className="text-sm mb-2"><span className="inline-flex items-center"><Check size={14} className="mr-1 text-green-500" /> approves changes</span> (add additions, remove deletions)</p>
-                          <p className="text-sm"><span className="inline-flex items-center"><X size={14} className="mr-1 text-red-500" /> discards changes</span></p>
+                          <p className="text-sm"><span className="inline-flex items-center gap-1"><Pencil size={14} className="mr-1 text-yellow-500" /> You can modify text in this mode.</span></p>
+                          <p className="text-sm"><span className="inline-flex items-center"><Check size={14} className="mr-1 text-green-500" /> Approves changes.</span></p>
+                          <p className="text-sm"><span className="inline-flex items-center"><X size={14} className="mr-1 text-red-500" /> Discards changes.</span></p>
                         </div>
                       </div>
                     </div>
                   )}
                 </div>
-
-
               </div>
 
               {isSimpleMode ? (
-                <div className="space-y-1 text-lg leading-relaxed">
-                  {differences.map((part, index) => (
-                    <span
-                      key={index}
-                      className={`
-                    ${
-                      part.added
-                        ? (isDarkMode ? 'bg-green-900/100' : 'bg-green-200') +
-                          ' px-1 rounded'
-                        : ''
-                    }
-                    ${
-                      part.removed
-                        ? (isDarkMode ? 'bg-red-900/100' : 'bg-red-200') +
-                          ' px-1 rounded'
-                        : ''
-                    }
-                  `}
-                    >
-                      {part.value}
-                    </span>
-                  ))}
-                </div>
-              ) : (
-                <div
-                  ref={containerRef}
-                  className="flex flex-col md:flex-row relative"
-                >
-                  {!isSimpleMode && (
-                    <div className="flex flex-row md:flex-row" style={{width: '100%'}}> {/* Added width: 100% to ensure full width for flex children */}
+                <div>
+                  <div className="flex flex-col mb-4">
+                    {showRepeatedWords && (
                       <div
-                        className={`w-44 p-4 rounded-lg border ${
+                        className={`w-full p-4 rounded-lg border ${
                           isDarkMode
                             ? 'border-gray-600 bg-gray-800 text-white'
                             : 'border-gray-300 bg-white'
-                        } mr-4 overflow-y-auto order-1 md:order-none relative max-h-64`}
+                        } mb-4 overflow-y-auto relative max-h-64`}
                       >
-                        <ul>
+                        <div className="text-wrap">
                           {Object.entries(repeatedWordsFinalText)
                             .sort(([, countA], [, countB]) => countB - countA)
-                            .map(([word, count]) => (
-                              <li key={word} className="mb-1">
-                                <span className="font-medium">{word}:</span>{' '}
-                                {count}
-                              </li>
+                            .map(([word, count], index, array) => (
+                              <span key={word}>
+                                <span className="font-medium">{word}</span>: {count}
+                                {index < array.length - 1 ? ', ' : ''}
+                              </span>
                             ))}
                           {Object.keys(repeatedWordsFinalText).length === 0 && (
-                            <li className="text-gray-500 text-sm">
+                            <span className="text-gray-500 text-sm">
                               No repeated words.
-                            </li>
+                            </span>
                           )}
-                        </ul>
-                        <button
-                          onClick={updateRepeatedWordsFinalText}
-                          className={`absolute top-2 right-2 p-2 rounded-full transition-all ${
-                            isDarkMode
-                              ? 'bg-gray-700 hover:bg-gray-600'
-                              : 'bg-gray-200 hover:bg-gray-300'
-                          }`}
-                          title="Update repeated words count"
-                        >
-                          <RefreshCw
-                            size={18}
-                            className={
-                              isDarkMode ? 'text-white' : 'text-gray-700'
-                            }
-                          />
-                        </button>
+                        </div>
+                        <div className="absolute top-2 right-2 flex gap-2">
+                          <button
+                            onClick={updateRepeatedWordsFinalText}
+                            className={`p-2 rounded-full transition-all ${
+                              isDarkMode
+                                ? 'bg-gray-700 hover:bg-gray-600'
+                                : 'bg-gray-200 hover:bg-gray-300'
+                            }`}
+                            title="Update repeated words count"
+                          >
+                            <RefreshCw
+                              size={18}
+                              className={
+                                isDarkMode ? 'text-white' : 'text-gray-700'
+                              }
+                            />
+                          </button>
+                        </div>
                       </div>
+                    )}
+                  </div>
+                  <div className="space-y-1 text-lg leading-relaxed">
+                    {differences.map((part, index) => (
+                      <span
+                        key={index}
+                        className={`
+                      ${
+                        part.added
+                          ? (isDarkMode ? 'bg-green-900/100' : 'bg-green-200') +
+                            ' px-1 rounded'
+                          : ''
+                      }
+                      ${
+                        part.removed
+                          ? (isDarkMode ? 'bg-red-900/100' : 'bg-red-200') +
+                            ' px-1 rounded'
+                          : ''
+                      }
+                    `}
+                      >
+                        {part.value}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="relative">
+                  {!isSimpleMode && (
+                    <div className="flex flex-col" style={{width: '100%'}}>
+                      <div className={`mb-2 text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                        Words: {countWordsAndChars(finalTextRef.current?.textContent || '').words} | 
+                        Characters: {countWordsAndChars(finalTextRef.current?.textContent || '').chars}
+                      </div>
+                      
+                      {showRepeatedWords && (
+                        <div
+                          className={`p-4 rounded-lg border ${
+                            isDarkMode
+                              ? 'border-gray-600 bg-gray-800 text-white'
+                              : 'border-gray-300 bg-white'
+                          } mb-4 overflow-y-auto relative max-h-64`}
+                        >
+                          <ul>
+                            {Object.entries(repeatedWordsFinalText)
+                              .sort(([, countA], [, countB]) => countB - countA)
+                              .map(([word, count], index, array) => (
+                                <span key={word}>
+                                  <span className="font-medium">{word}</span>: {count}
+                                  {index < array.length - 1 ? ', ' : ''}
+                                </span>
+                              ))}
+                            {Object.keys(repeatedWordsFinalText).length === 0 && (
+                              <li className="text-gray-500 text-sm">
+                                No repeated words.
+                              </li>
+                            )}
+                          </ul>
+                          <div className="absolute top-2 right-2 flex gap-2">
+                            <button
+                              onClick={updateRepeatedWordsFinalText}
+                              className={`p-2 rounded-full transition-all ${
+                                isDarkMode
+                                  ? 'bg-gray-700 hover:bg-gray-600'
+                                  : 'bg-gray-200 hover:bg-gray-300'
+                              }`}
+                              title="Update repeated words count"
+                            >
+                              <RefreshCw
+                                size={18}
+                                className={
+                                  isDarkMode ? 'text-white' : 'text-gray-700'
+                                }
+                              />
+                            </button>
+                          </div>
+                        </div>
+                      )}
                       <div
-                        className={`p-4 rounded border relative text-lg leading-relaxed outline-none min-h-[200px] whitespace-pre-wrap mb-4 md:mb-0 order-2 md:order-none overflow-y-auto max-h-64 ${ // Added overflow-y-auto and max-h-64
+                        className={`p-4 rounded border relative text-lg leading-relaxed outline-none min-h-[300px] whitespace-pre-wrap mb-4 md:mb-0 overflow-y-auto ${
                           isDarkMode
                             ? 'dark-scrollbar border-gray-700'
                             : 'border-gray-300'
@@ -1313,8 +1371,7 @@ function App() {
                             : ''
                         }`}
                         style={{
-                          width: '100%',
-                          flex: `1 1 0`,
+                          width: '100%'
                         }}
                       >
                         <div
@@ -1347,67 +1404,11 @@ function App() {
                           )}
                         </button>
                       </div>
+
                     </div>
                   )}
 
-                  <div
-                    className="absolute right-0 top-0 bottom-0 w-5 cursor-ew-resize flex items-center justify-center hover:bg-blue-100 dark:hover:bg-blue-900/30 z-10"
-                    style={{ left: `calc(${splitRatio}% - 10px)` }}
-                    onMouseDown={handleResizeStart}
-                  >
-                    <GripHorizontal size={16} className="text-gray-400" />
-                  </div>
-
-                  <div
-                    className={`pl-4 flex flex-wrap content-start gap-2 overflow-y-auto ${
-                      isDarkMode ? 'dark-scrollbar' : ''
-                    }`}
-                    style={{
-                      width: '100%',
-                      flex: `0 0 ${100 - splitRatio}%`,
-                    }}
-                  >
-                    {getVisibleDifferences().map(({ part, index }) => (
-                      <div
-                        key={index}
-                        className={`flex items-center border rounded p-2 ${
-                          isDarkMode ? 'border-gray-700' : 'border-gray-300'
-                        }`}
-                      >
-                        <span
-                          className={`mr-2 px-1 ${
-                            part.added
-                              ? isDarkMode
-                                ? 'bg-green-900/100'
-                                : 'bg-green-200'
-                              : isDarkMode
-                              ? 'bg-red-900/100'
-                              : 'bg-red-200'
-                          }`}
-                        >
-                          {part.value.length > 20
-                            ? part.value.substring(0, 20) + '...'
-                            : part.value}
-                        </span>
-                        <div className="flex gap-1">
-                          <button
-                            onClick={() => handleKeep(index)}
-                            className="p-1 rounded-full bg-green-600 hover:bg-green-700 text-white shadow-md transition-all duration-200 hover:shadow-lg transform hover:scale-110"
-                            title="Keep this text"
-                          >
-                            <Check size={16} />
-                          </button>
-                          <button
-                            onClick={() => handleRemove(index)}
-                            className="p-1 rounded-full bg-red-600 hover:bg-red-700 text-white shadow-md transition-all duration-200 hover:shadow-lg transform hover:scale-110"
-                            title="Remove this text"
-                          >
-                            <X size={16} />
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                  {/* Removed resize handle */}
                 </div>
               )}
             </div>
@@ -1432,7 +1433,6 @@ function App() {
             }`}
           >
             <Github size={20} />
-            <span>Contribute on GitHub</span>
           </a>
         </div>
       </footer>
