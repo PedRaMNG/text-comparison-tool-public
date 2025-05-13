@@ -593,8 +593,6 @@ function App() {
     }
   };
 
-  // Removed resize handlers as we're removing the dynamic split view
-
   const handleCopy = () => {
     if (finalTextRef.current) {
       const textToCopy = finalTextRef.current.textContent || '';
@@ -609,7 +607,6 @@ function App() {
     }
   };
 
-  // Function to count words and characters in a text
   const countWordsAndChars = (text: string): { words: number; chars: number } => {
     const trimmedText = text.trim();
     const words = trimmedText ? trimmedText.split(/\s+/).length : 0;
@@ -836,8 +833,6 @@ function App() {
           </div>
         )}
 
-
-
         {showSaveDialog && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div
@@ -995,10 +990,10 @@ function App() {
                   <textarea
                     value={text1}
                     onChange={(e) => setText1(e.target.value)}
-                    className={`w-full h-64 p-4 rounded-lg border transition-colors ${
+                    className={`w-full h-64 p-4 rounded-lg border shadow-sm transition-all duration-200 ${
                       isDarkMode
-                        ? 'border-gray-600 bg-gray-800 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent'
-                        : 'border-gray-300 bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent'
+                        ? 'border-gray-600 bg-gray-800 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:shadow-md'
+                        : 'border-gray-300 bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:shadow-md'
                     }`}
                     placeholder="Paste original text here..."
                   />
@@ -1008,10 +1003,10 @@ function App() {
                   
                   {showRepeatedWords && (
                     <div
-                      className={`w-96 p-4 rounded-lg border ${
+                      className={`w-96 p-4 rounded-lg border shadow-sm ${
                         isDarkMode
-                          ? 'border-gray-600 bg-gray-800 text-white'
-                          : 'border-gray-300 bg-white'
+                          ? 'border-gray-600 bg-gray-800/80 text-white'
+                          : 'border-gray-300 bg-white/80'
                       } ml-2 overflow-y-auto max-h-64`}
                     >
                       <div className="text-wrap">
@@ -1041,10 +1036,10 @@ function App() {
                   <textarea
                     value={text2}
                     onChange={(e) => setText2(e.target.value)}
-                    className={`w-full h-64 p-4 rounded-lg border transition-colors ${
+                    className={`w-full h-64 p-4 rounded-lg border shadow-sm transition-all duration-200 ${
                       isDarkMode
-                        ? 'border-gray-600 bg-gray-800 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent'
-                        : 'border-gray-300 bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent'
+                        ? 'border-gray-600 bg-gray-800 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:shadow-md'
+                        : 'border-gray-300 bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:shadow-md'
                     }`}
                     placeholder="Paste modified text here..."
                   />
@@ -1053,10 +1048,10 @@ function App() {
                   </div>
                   {showRepeatedWords && (
                     <div
-                      className={`w-96 p-4 rounded-lg border ${
+                      className={`w-96 p-4 rounded-lg border shadow-sm ${
                         isDarkMode
-                          ? 'border-gray-600 bg-gray-800 text-white'
-                          : 'border-gray-300 bg-white'
+                          ? 'border-gray-600 bg-gray-800/80 text-white'
+                          : 'border-gray-300 bg-white/80'
                       } ml-2 overflow-y-auto max-h-64`}
                     >
                       <div className="text-wrap">
@@ -1081,107 +1076,121 @@ function App() {
             </div>
 
             <div className="flex justify-center gap-4 mb-8">
-                <button
-                  onClick={handleCompare}
-                  className={`px-6 py-3 text-white rounded-lg font-medium transition-all duration-300 ${
-                    isDarkMode ? 'glass-button-green' : 'glass-button-green'
-                  } transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50`}
-                >
-                  Compare Texts
-                </button>
-                <button
-                  onClick={() => setShowRepeatedWords(prev => !prev)}
-                  className={`px-6 py-3 rounded-lg font-medium transition-all duration-300 ${
-                    isDarkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'
-                  } transform hover:scale-105 focus:outline-none`}
-                  title={showRepeatedWords ? "Hide Repeated Words" : "Show Repeated Words"}
-                >
-                  {showRepeatedWords ? "Hide Repeated Words" : "Show Repeated Words"}
-                </button>
-                <button
-                  onClick={user ? handleSave : handleLogin}
-                  className={`p-3 rounded-lg transition-all duration-300 ${user ? 
-                    (isDarkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300') : 
-                    (isDarkMode ? 'bg-gray-700 opacity-60 hover:opacity-100' : 'bg-gray-200 opacity-60 hover:opacity-100')
-                  } transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50`}
-                  title={user ? "Save Comparison" : "Sign in"}
-                >
-                  <Save size={18} className={user ? (isDarkMode ? "text-white" : "text-gray-800") : "text-white"} />
-                </button>
-                <button
-                  onClick={user ? () => setShowHistory((prev) => !prev) : handleLogin}
-                  className={`p-3 rounded-lg transition-all duration-300 ${user ? 
-                    (isDarkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300') : 
-                    (isDarkMode ? 'bg-gray-700 opacity-60 hover:opacity-100' : 'bg-gray-200 opacity-60 hover:opacity-100')
-                  } transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50`}
-                  title={user ? (showHistory ? 'Hide History' : 'Show History') : "Sign in"}
-                >
-                  <History size={18} className={user ? (isDarkMode ? "text-white" : "text-gray-800") : "text-white"} />
-                </button>
-                <div className="relative inline-flex items-center">
-                  <span
-                    className={`mr-2 text-sm ${!isSimpleMode ? 'font-bold' : ''}`}
-                  >
-                    Advanced
-                  </span>
-                  <div
-                    onClick={toggleMode}
-                    className={`w-16 h-8 flex items-center rounded-full p-1 cursor-pointer transition-colors ${
-                      isDarkMode ? 'bg-gray-700' : 'bg-gray-300'
-                    }`}
-                  >
-                    <div
-                      className={`bg-blue-600 w-6 h-6 rounded-full shadow-md transform transition-transform ${
-                        isSimpleMode ? 'translate-x-8' : 'translate-x-0'
-                      }`}
-                    />
-                  </div>
-                  <span
-                    className={`ml-2 text-sm ${isSimpleMode ? 'font-bold' : ''}`}
-                  >
-                    Simple
-                  </span>
-                </div>
-              </div>
+              <button
+                onClick={handleCompare}
+                className={`px-6 py-3 text-white rounded-lg font-medium transition-all duration-300 ${
+                  isDarkMode ? 'glass-button-green' : 'glass-button-green'
+                } transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50 shadow-md hover:shadow-lg`}
+              >
+                Compare Texts
+              </button>
+              <button
+                onClick={() => setShowRepeatedWords(prev => !prev)}
+                className={`px-6 py-3 rounded-lg font-medium transition-all duration-300 ${
+                  isDarkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'
+                } transform hover:scale-105 focus:outline-none shadow-sm hover:shadow-md`}
+                title={showRepeatedWords ? "Hide Repeated Words" : "Show Repeated Words"}
+              >
+                {showRepeatedWords ? "Hide Repeated Words" : "Show Repeated Words"}
+              </button>
+              <button
+                onClick={user ? handleSave : handleLogin}
+                className={`p-3 rounded-lg transition-all duration-300 ${user ? 
+                  (isDarkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300') : 
+                  (isDarkMode ? 'bg-gray-700 opacity-60 hover:opacity-100' : 'bg-gray-200 opacity-60 hover:opacity-100')
+                } transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50`}
+                title={user ? "Save Comparison" : "Sign in"}
+              >
+                <Save size={18} className={user ? (isDarkMode ? "text-white" : "text-gray-800") : "text-white"} />
+              </button>
+              <button
+                onClick={user ? () => setShowHistory((prev) => !prev) : handleLogin}
+                className={`p-3 rounded-lg transition-all duration-300 ${user ? 
+                  (isDarkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300') : 
+                  (isDarkMode ? 'bg-gray-700 opacity-60 hover:opacity-100' : 'bg-gray-200 opacity-60 hover:opacity-100')
+                } transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50`}
+                title={user ? (showHistory ? 'Hide History' : 'Show History') : "Sign in"}
+              >
+                <History size={18} className={user ? (isDarkMode ? "text-white" : "text-gray-800") : "text-white"} />
+              </button>
+              <button
+                onClick={openSettingsModal}
+                className={`p-3 rounded-lg transition-all duration-300 ${
+                  isDarkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'
+                } transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50`}
+                title="Settings"
+              >
+                <Settings size={18} className={isDarkMode ? "text-white" : "text-gray-800"} />
+              </button>
+            </div>
 
             <div
               className={`rounded-lg shadow-lg p-6 transition-colors ${
                 isDarkMode ? 'bg-gray-800' : 'bg-white'
               }`}
             >
-              <div className="mb-4">
+              <div className="mb-6">
                 <div className="flex justify-between items-center mb-4">
                   <div className="flex flex-col">
                     <h2 className="text-xl font-semibold">Comparison Result</h2>
-                    {isSimpleMode && (
-                      <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                        Words: {countWordsAndChars(text2).words} | 
-                        Characters: {countWordsAndChars(text2).chars}
-                      </div>
-                    )}
                   </div>
+                  
+                </div>
+                
+                <div className={`flex border-b mb-4 ${
+                  isDarkMode ? 'border-gray-700' : 'border-gray-300'
+                }`}>
+                  <button
+                    onClick={() => setIsSimpleMode(false)}
+                    className={`py-2 px-4 font-medium text-sm transition-colors ${
+                      !isSimpleMode 
+                        ? `border-b-2 ${isDarkMode ? 'border-blue-500 text-blue-400' : 'border-blue-600 text-blue-600'}` 
+                        : isDarkMode ? 'text-gray-400 hover:text-gray-300' : 'text-gray-600 hover:text-gray-800'
+                    }`}
+                  >
+                    Advanced
+                  </button>
+                  <button
+                    onClick={() => setIsSimpleMode(true)}
+                    className={`py-2 px-4 font-medium text-sm transition-colors ${
+                      isSimpleMode 
+                        ? `border-b-2 ${isDarkMode ? 'border-blue-500 text-blue-400' : 'border-blue-600 text-blue-600'}` 
+                        : isDarkMode ? 'text-gray-400 hover:text-gray-300' : 'text-gray-600 hover:text-gray-800'
+                    }`}
+                  >
+                    Simple
+                  </button>
+                </div>
+                
+                <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                  Words: {countWordsAndChars(isSimpleMode ? text2 : (finalTextRef.current?.textContent || '')).words} | 
+                  Characters: {countWordsAndChars(isSimpleMode ? text2 : (finalTextRef.current?.textContent || '')).chars}
+                </div>
 
-                  {!isSimpleMode && (
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={handleUndo}
-                        className={`flex items-center gap-1 px-3 py-2 rounded-lg transition-all duration-300 ${
-                          isDarkMode ? 'glass-button-blue' : 'glass-button-blue'
-                        } text-white transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 ${
-                          decisions.length === 0
-                            ? 'opacity-50 cursor-not-allowed'
-                            : ''
-                        }`}
-                        title="Undo last decision"
-                        disabled={decisions.length === 0}
-                      >
-                        <Undo2 size={16} />
-                        <span>Undo</span>
-                      </button>
+                {!isSimpleMode && (
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={handleUndo}
+                      className={`flex items-center gap-1 px-3 py-2 rounded-lg transition-all duration-300 ${
+                        isDarkMode ? 'glass-button-blue' : 'glass-button-blue'
+                      } text-white transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 ${
+                        decisions.length === 0
+                          ? 'opacity-50 cursor-not-allowed'
+                          : ''
+                      }`}
+                      title="Undo last decision"
+                      disabled={decisions.length === 0}
+                    >
+                      <Undo2 size={16} />
+                      <span>Undo</span>
+                    </button>
 
+                    <div className="flex items-center gap-1 bg-opacity-50 rounded-lg overflow-hidden ${
+                      isDarkMode ? 'bg-gray-700' : 'bg-gray-200'
+                    }">
                       <button
                         onClick={handleApproveNext}
-                        className={`flex items-center gap-1 px-3 py-2 rounded-lg transition-all duration-300 ${
+                        className={`flex items-center gap-1 px-3 py-2 transition-all duration-300 ${
                           isDarkMode
                             ? 'glass-button-green'
                             : 'glass-button-green'
@@ -1199,7 +1208,7 @@ function App() {
 
                       <button
                         onClick={handleRejectNext}
-                        className={`flex items-center gap-1 px-3 py-2 rounded-lg transition-all duration-300 ${
+                        className={`flex items-center gap-1 px-3 py-2 transition-all duration-300 ${
                           isDarkMode ? 'glass-button-red' : 'glass-button-red'
                         } text-white transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50 ${
                           getVisibleDifferences().length === 0
@@ -1212,29 +1221,30 @@ function App() {
                         <X size={16} />
                         <ChevronRight size={16} />
                       </button>
+                    </div>
 
-                      <div className="relative group">
-                        <button
-                          className={`p-2 rounded-lg transition-colors ${
-                            isDarkMode
-                              ? 'bg-gray-700 hover:bg-gray-600'
-                              : 'bg-gray-200 hover:bg-gray-300'
-                          }`}
-                          title="Information"
-                        >
-                          <Info size={18} className={isDarkMode ? 'text-white' : 'text-gray-700'} />
-                        </button>
-                        <div className={`absolute right-0 w-64 p-3 rounded-lg shadow-lg z-10 transform scale-0 group-hover:scale-100 transition-transform origin-top-right ${
-                          isDarkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'
-                        }`}>
-                          <p className="text-sm"><span className="inline-flex items-center gap-1"><Pencil size={14} className="mr-1 text-yellow-500" /> You can modify text in this mode.</span></p>
-                          <p className="text-sm"><span className="inline-flex items-center"><Check size={14} className="mr-1 text-green-500" /> Approves changes.</span></p>
-                          <p className="text-sm"><span className="inline-flex items-center"><X size={14} className="mr-1 text-red-500" /> Discards changes.</span></p>
-                        </div>
+                    <div className="relative group">
+                      <button
+                        className={`p-2 rounded-lg transition-colors ${
+                          isDarkMode
+                            ? 'bg-gray-700 hover:bg-gray-600'
+                            : 'bg-gray-200 hover:bg-gray-300'
+                        }`}
+                        title="Information"
+                      >
+                        <Info size={18} className={isDarkMode ? 'text-white' : 'text-gray-700'} />
+                      </button>
+                      <div className={`absolute right-0 w-64 p-3 rounded-lg shadow-lg z-10 transform scale-0 group-hover:scale-100 transition-transform origin-top-right ${
+                        isDarkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'
+                      }`}>
+                        <p className="text-sm font-medium mb-1">Comparison Controls:</p>
+                        <p className="text-sm"><span className="inline-flex items-center gap-1"><Pencil size={14} className="mr-1 text-yellow-500" /> You can modify text in this mode.</span></p>
+                        <p className="text-sm"><span className="inline-flex items-center"><Check size={14} className="mr-1 text-green-500" /> Approves changes.</span></p>
+                        <p className="text-sm"><span className="inline-flex items-center"><X size={14} className="mr-1 text-red-500" /> Discards changes.</span></p>
                       </div>
                     </div>
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
 
               {isSimpleMode ? (
@@ -1242,10 +1252,10 @@ function App() {
                   <div className="flex flex-col mb-4">
                     {showRepeatedWords && (
                       <div
-                        className={`w-full p-4 rounded-lg border ${
+                        className={`w-full p-4 rounded-lg border shadow-sm ${
                           isDarkMode
-                            ? 'border-gray-600 bg-gray-800 text-white'
-                            : 'border-gray-300 bg-white'
+                            ? 'border-gray-600 bg-gray-800/80 text-white'
+                            : 'border-gray-300 bg-white/80'
                         } mb-4 overflow-y-auto relative max-h-64`}
                       >
                         <div className="text-wrap">
@@ -1284,38 +1294,40 @@ function App() {
                       </div>
                     )}
                   </div>
-                  <div className="space-y-1 text-lg leading-relaxed">
-                    {differences.map((part, index) => (
-                      <span
-                        key={index}
-                        className={`
-                      ${
-                        part.added
-                          ? (isDarkMode ? 'bg-green-900/100' : 'bg-green-200') +
-                            ' px-1 rounded'
-                          : ''
-                      }
-                      ${
-                        part.removed
-                          ? (isDarkMode ? 'bg-red-900/100' : 'bg-red-200') +
-                            ' px-1 rounded'
-                          : ''
-                      }
-                    `}
-                      >
-                        {part.value}
-                      </span>
-                    ))}
+                  <div className={`p-4 rounded-lg border shadow-sm ${
+                    isDarkMode
+                      ? 'dark-scrollbar border-gray-700 bg-gray-800/50'
+                      : 'border-gray-300 bg-white/50'
+                  } min-h-[300px] overflow-y-auto`}>
+                    <div className="space-y-1 text-lg leading-relaxed">
+                      {differences.map((part, index) => (
+                        <span
+                          key={index}
+                          className={`
+                            ${
+                              part.added
+                                ? (isDarkMode ? 'bg-green-900/100' : 'bg-green-200') +
+                                  ' px-1 rounded'
+                                : ''
+                            }
+                            ${
+                              part.removed
+                                ? (isDarkMode ? 'bg-red-900/100' : 'bg-red-200') +
+                                  ' px-1 rounded'
+                                : ''
+                            }
+                          `}
+                        >
+                          {part.value}
+                        </span>
+                      ))}
+                    </div>
                   </div>
                 </div>
               ) : (
                 <div className="relative">
                   {!isSimpleMode && (
                     <div className="flex flex-col" style={{width: '100%'}}>
-                      <div className={`mb-2 text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                        Words: {countWordsAndChars(finalTextRef.current?.textContent || '').words} | 
-                        Characters: {countWordsAndChars(finalTextRef.current?.textContent || '').chars}
-                      </div>
                       
                       {showRepeatedWords && (
                         <div
@@ -1361,13 +1373,13 @@ function App() {
                         </div>
                       )}
                       <div
-                        className={`p-4 rounded border relative text-lg leading-relaxed outline-none min-h-[300px] whitespace-pre-wrap mb-4 md:mb-0 overflow-y-auto ${
+                        className={`p-4 rounded-lg border relative text-lg leading-relaxed outline-none min-h-[300px] whitespace-pre-wrap mb-4 md:mb-0 overflow-y-auto shadow-sm ${
                           isDarkMode
-                            ? 'dark-scrollbar border-gray-700'
-                            : 'border-gray-300'
+                            ? 'dark-scrollbar border-gray-700 bg-gray-800/50'
+                            : 'border-gray-300 bg-white/50'
                         } ${
                           isFinalTextFocused
-                            ? 'ring-2 ring-blue-500 border-transparent'
+                            ? 'ring-2 ring-blue-500 border-transparent shadow-md'
                             : ''
                         }`}
                         style={{
@@ -1404,11 +1416,8 @@ function App() {
                           )}
                         </button>
                       </div>
-
                     </div>
                   )}
-
-                  {/* Removed resize handle */}
                 </div>
               )}
             </div>
